@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabela de Despesas Domésticas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .total {
+            font-weight: bold;
+            text-align: right;
+            background-color: #f8f8f8;
+        }
+        .input-table input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            text-align: right;
+            border: 1px solid #ccc;
+        }
+        .button {
+            display: block;
+            width: 200px;
+            padding: 10px;
+            margin: 20px auto;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .historico-table {
+            width: 100%;
+            margin-top: 40px;
+            border-collapse: collapse;
+        }
+        .historico-table th, .historico-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        .historico-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Tabela de Despesas Domésticas</h1>
+
+    <form id="despesasForm">
+        <table>
+            <thead>
+                <tr>
+                    <th>Categoria</th>
+                    <th>Descrição</th>
+                    <th>Valor (R$)</th>
+                </tr>
+            </thead>
+            <tbody class="input-table">
+                <tr>
+                    <td>Contas Fixas</td>
+                    <td>Água</td>
+                    <td><input type="number" id="agua" value="0" /></td>
+                </tr>
+                <tr>
+                    <td>Contas Fixas</td>
+                    <td>Luz</td>
+                    <td><input type="number" id="luz" value="0" /></td>
+                </tr>
+                <tr>
+                    <td>Contas Fixas</td>
+                    <td>Internet</td>
+                    <td><input type="number" id="internet" value="0" /></td>
+                </tr>
+                <tr>
+                    <td>Contas Variáveis</td>
+                    <td>Supermercado</td>
+                    <td><input type="number" id="supermercado" value="0" /></td>
+                </tr>
+                <tr>
+                    <td>Contas Variáveis</td>
+                    <td>Carro</td>
+                    <td><input type="number" id="carro" value="0" /></td>
+                </tr>
+                <tr>
+                    <td>Outros</td>
+                    <td>Despesas Diversas</td>
+                    <td><input type="number" id="diversas" value="0" /></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="total">
+                    <td colspan="2">Total Mensal</td>
+                    <td><span id="totalMensal">R$ 0,00</span></td>
+                </tr>
+                <tr class="total">
+                    <td colspan="2">Total Diário</td>
+                    <td><span id="totalDiario">R$ 0,00</span></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <label for="mesAno">Selecione o Mês e Ano:</label>
+        <select id="mesAno">
+            <option value="01/2024">Janeiro 2024</option>
+            <option value="02/2024">Fevereiro 2024</option>
+            <option value="03/2024">Março 2024</option>
+            <option value="04/2024">Abril 2024</option>
+            <option value="05/2024">Maio 2024</option>
+            <option value="06/2024">Junho 2024</option>
+            <option value="07/2024">Julho 2024</option>
+            <option value="08/2024">Agosto 2024</option>
+            <option value="09/2024">Setembro 2024</option>
+            <option value="10/2024">Outubro 2024</option>
+            <option value="11/2024">Novembro 2024</option>
+            <option value="12/2024">Dezembro 2024</option>
+        </select>
+
+        <button type="button" class="button" onclick="calcularTotais()">Calcular Totais</button>
+        <button type="button" class="button" onclick="salvarDespesas()">Salvar Despesas</button>
+        <button type="button" class="button" onclick="gerarPDF()">Salvar Relatório em PDF</button>
+    </form>
+
+    <h2>Histórico de Despesas</h2>
+    <table class="historico-table">
+        <thead>
+            <tr>
+                <th>Mês/Ano</th>
+                <th>Água (R$)</th>
+                <th>Luz (R$)</th>
+                <th>Internet (R$)</th>
+                <th>Supermercado (R$)</th>
+                <th>Carro (R$)</th>
+                <th>Despesas Diversas (R$)</th>
+                <th>Total Mensal (R$)</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="historicoDespesas">
+            <!-- Histórico de Despesas será exibido aqui -->
+        </tbody>
+    </table>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        function calcularTotais() {
+            const agua = parseFloat(document.getElementById('agua').value) || 0;
+            const luz = parseFloat(document.getElementById('luz').value) || 0;
+            const internet = parseFloat(document.getElementById('internet').value) || 0;
+            const supermercado = parseFloat(document.getElementById('supermercado').value) || 0;
+            const carro = parseFloat(document.getElementById('carro').value) || 0;
+            const diversas = parseFloat(document.getElementById('diversas').value) || 0;
+
+            const totalMensal = agua + luz + internet + supermercado + carro + diversas;
+            const totalDiario = totalMensal / 30;
+
+            document.getElementById('totalMensal').textContent = `R$ ${totalMensal.toFixed(2)}`;
+            document.getElementById('totalDiario').textContent = `R$ ${totalDiario.toFixed(2)}`;
+        }
+
+        function salvarDespesas() {
+            const mesAno = document.getElementById('mesAno').value;
+            const agua = parseFloat(document.getElementById('agua').value) || 0;
+            const luz = parseFloat(document.getElementById('luz').value) || 0;
+            const internet = parseFloat(document.getElementById('internet').value) || 0;
+            const supermercado = parseFloat(document.getElementById('supermercado').value) || 0;
+            const carro = parseFloat(document.getElementById('carro').value) || 0;
+            const diversas = parseFloat(document.getElementById('diversas').value) || 0;
+            const totalMensal = agua + luz + internet + supermercado + carro + diversas;
+
+            const despesas = {
+                mesAno: mesAno,
+                agua: agua,
+                luz: luz,
+                internet: internet,
+                supermercado: supermercado,
+                carro: carro,
+                diversas: diversas,
+                totalMensal: totalMensal.toFixed(2)
+            };
+
+            let historico = JSON.parse(localStorage.getItem('historicoDespesas')) || [];
+            historico.push(despesas);
+
+            localStorage.setItem('historicoDespesas', JSON.stringify(historico));
+            atualizarHistorico();
+        }
+
+        function atualizarHistorico() {
+            let historico = JSON.parse(localStorage.getItem('historicoDespesas')) || [];
+            const tabelaHistorico = document.getElementById('historicoDespesas');
+            tabelaHistorico.innerHTML = '';
+
+            historico.forEach((item, index) => {
+                const linha = document.createElement('tr');
+                linha.innerHTML = `
+                    <td>${item.mesAno}</td>
+                    <td>${item.agua}</td>
+                    <td>${item.luz}</td>
+                    <td>${item.internet}</td>
+                    <td>${item.supermercado}</td>
+                    <td>${item.carro}</td>
+                    <td>${item.diversas}</td>
+                    <td>R$ ${item.totalMensal}</td>
+                    <td class="action-buttons">
+                        <button onclick="editarDespesas(${index})">Editar</button>
+                        <button onclick="apagarDespesa(${index})">Apagar</button>
+                    </td>
+                `;
+                tabelaHistorico.appendChild(linha);
+            });
+        }
+
+        function apagarDespesa(index) {
+            let historico = JSON.parse(localStorage.getItem('historicoDespesas')) || [];
+            historico.splice(index, 1);
+            localStorage.setItem('historicoDespesas', JSON.stringify(historico));
+            atualizarHistorico();
+        }
+
+        function editarDespesas(index) {
+            let historico = JSON.parse(localStorage.getItem('historicoDespesas')) || [];
+            const item = historico[index];
+
+            // Preenche o formulário com os dados da despesa para edição
+            document.getElementById('agua').value = item.agua;
+            document.getElementById('luz').value = item.luz;
+            document.getElementById('internet').value = item.internet;
+            document.getElementById('supermercado').value = item.supermercado;
+            document.getElementById('carro').value = item.carro;
+            document.getElementById('diversas').value = item.diversas;
+            document.getElementById('mesAno').value = item.mesAno;
+
+            // Remove a despesa original e permite ao usuário salvar novamente
+            historico.splice(index, 1);
+            localStorage.setItem('historicoDespesas', JSON.stringify(historico));
+            atualizarHistorico();
+        }
+
+        // Função para gerar o PDF
+        function gerarPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Adiciona título
+            doc.setFontSize(18);
+            doc.text('Relatório de Despesas Domésticas', 20, 20);
+
+            // Adiciona a tabela de histórico
+            doc.setFontSize(12);
+            let yOffset = 30;
+            const historico = JSON.parse(localStorage.getItem('historicoDespesas')) || [];
+
+            // Títulos das colunas
+            const colunas = ['Mês/Ano', 'Água', 'Luz', 'Internet', 'Supermercado', 'Carro', 'Diversas', 'Total Mensal'];
+
+            // Desenha cabeçalhos
+            for (let i = 0; i < colunas.length; i++) {
+                doc.text(colunas[i], 20 + (i * 30), yOffset);
+            }
+
+            // Adiciona as linhas de dados
+            yOffset += 10;
+            historico.forEach(item => {
+                doc.text(item.mesAno, 20, yOffset);
+                doc.text(item.agua.toString(), 50, yOffset);
+                doc.text(item.luz.toString(), 80, yOffset);
+                doc.text(item.internet.toString(), 110, yOffset);
+                doc.text(item.supermercado.toString(), 140, yOffset);
+                doc.text(item.carro.toString(), 170, yOffset);
+                doc.text(item.diversas.toString(), 200, yOffset);
+                doc.text(item.totalMensal, 230, yOffset);
+                yOffset += 10;
+            });
+
+            // Salva o PDF
+            doc.save('relatorio_despesas.pdf');
+        }
+
+        window.onload = function() {
+            atualizarHistorico();
+        };
+    </script>
+
+</body>
+</html>
